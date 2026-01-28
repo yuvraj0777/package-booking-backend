@@ -70,6 +70,7 @@ const logUser = (req, res) => {
     email: req.user.email,
     id: req.user.id,
     role: req.user.role,
+    phone: req.user.phone,
   });
 };
 
@@ -120,6 +121,52 @@ const fetchApprovedReviews = async (req, res) => {
   }
 };
 
+const pendingServiceReview = async (req, res) => {
+  try {
+    const [row] = await my_db.query(`
+      SELECT sr.*, u.name
+      FROM serviceReview sr
+      JOIN users u ON u.id = sr.user_id
+      WHERE status = "PENDING"
+      ORDER BY sr.created_at DESC`);
+
+    if (row.affectedRows === 0) {
+      return res.status(404).json({ message: "Pending reviews not found!" });
+    }
+
+    return res.json(row);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error!",
+      error: error.message,
+    });
+  }
+};
+
+const approvedServiceReview = async (req, res) => {
+  try {
+    const [row] = await my_db.query(`
+    SELECT sr.*, u.name
+    FROM serviceReview sr
+    JOIN users u ON u.id = sr.user_id
+    WHERE status = "APPROVED"
+    ORDER BY sr.created_at DESC`);
+
+    if (row.affectedRows === 0) {
+      return res.status(404).json({ message: "Approved reviews not found!" });
+    }
+
+    return res.json(row);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error!",
+      error: error.message,
+    });
+  }
+};
+
 export default {
   showPackages,
   showUsers,
@@ -128,4 +175,6 @@ export default {
   logUser,
   fetchPendingReviews,
   fetchApprovedReviews,
+  pendingServiceReview,
+  approvedServiceReview,
 };

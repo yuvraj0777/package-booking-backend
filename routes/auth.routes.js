@@ -66,6 +66,19 @@ router.post(
   reviewsController.addReviews,
 );
 
+router.post(
+  "/service-review",
+  authMiddleware.verifyToken,
+  reviewsController.serviceReview,
+);
+
+router.put(
+  "/moderate-service-review",
+  authMiddleware.verifyToken,
+  permissionsMiddleware.checkPermission("MANAGE_USERS"),
+  reviewsController.moderateServiceReview,
+);
+
 router.post("/logout", authMiddleware.verifyToken, authController.loggedOut);
 
 router.get("/packages", authMiddleware.verifyToken, getController.showPackages);
@@ -86,6 +99,16 @@ router.get(
   "/approved-reviews",
   authMiddleware.verifyToken,
   getController.fetchApprovedReviews,
+);
+router.get(
+  "/approved-service-reviews",
+  authMiddleware.verifyToken,
+  getController.approvedServiceReview,
+);
+router.get(
+  "/pending-service-reviews",
+  authMiddleware.verifyToken,
+  getController.pendingServiceReview,
 );
 
 export default router;

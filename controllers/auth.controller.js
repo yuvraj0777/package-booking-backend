@@ -40,6 +40,7 @@ const userSignUp = async (req, res) => {
       id: result.insertId,
       email,
       role: "USER",
+      phone: phone,
     });
 
     setToken(res, token);
@@ -84,7 +85,7 @@ const userLogin = async (req, res) => {
   const { email, password } = req.body;
 
   const [rows] = await my_db.query(
-    `SELECT id, name, email, password_hash, role
+    `SELECT id, name, email, password_hash, role, phone
      FROM users WHERE email = ? AND is_active = TRUE`,
     [email],
   );
@@ -111,7 +112,7 @@ const adminLogin = async (req, res) => {
   const { email, password } = req.body;
 
   const [rows] = await my_db.query(
-    `SELECT id, name, email, password_hash, role
+    `SELECT id, name, email, password_hash, role, phone
      FROM users
      WHERE email = ? AND role IN ('ADMIN','MANAGER','SUPPORT')
      AND is_active = TRUE`,
@@ -142,6 +143,7 @@ const adminLogin = async (req, res) => {
     id: admin.id,
     email: admin.email,
     role: admin.role,
+    phone: admin.phone,
   });
 
   setToken(res, token);
