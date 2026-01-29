@@ -18,8 +18,34 @@ const addReviews = async (req, res) => {
       [packageId, userId, rating, review],
     );
 
+    const reviewId = row.insertId;
+
     if (row.affectedRows === 0) {
       return res.status(401).json({ message: "Review can't added!" });
+    }
+
+    try {
+      await my_db.query(
+        `
+        INSERT INTO user_activity_log
+         (user_id, description, action, entity_type, entity_id, ip_address, user_agent) 
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          userId,
+          `Added a ${rating}★ review for package ID ${packageId}`,
+          "ADD_REVIEW",
+          "REVIEW",
+          reviewId,
+          req.ip || null,
+          req.headers["user-agent"] || "UNKNOWN",
+        ],
+      );
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "USER review log activity failed!",
+        error: error.message,
+      });
     }
 
     return res
@@ -90,8 +116,34 @@ const serviceReview = async (req, res) => {
       [userId, rating, review],
     );
 
+    const reviewId = row.insertId;
+
     if (row.affectedRows === 0) {
       return res.status(401).json({ message: "Review can't added!" });
+    }
+
+    try {
+      await my_db.query(
+        `
+        INSERT INTO user_activity_log
+         (user_id, description, action, entity_type, entity_id, ip_address, user_agent)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          userId,
+          `Added a ${rating}★ review for package ID ${packageId}`,
+          "ADD_REVIEW",
+          "REVIEW",
+          reviewId,
+          req.ip || null,
+          req.headers["user-agent"] || "UNKNOWN",
+        ],
+      );
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "USER review log activity failed!",
+        error: error.message,
+      });
     }
 
     return res

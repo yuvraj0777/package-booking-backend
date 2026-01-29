@@ -25,7 +25,12 @@ const createPackage = async (req, res) => {
         `INSERT INTO admin_activity_logs
       (admin_id, action, entity, entity_id, ip_address, user_agent)
       VALUES (?, 'CREATE', 'PACKAGE', ?, ?, ?)`,
-        [createdBy, row.insertId, req.ip, req.headers["user-agent"]]
+        [
+          createdBy,
+          row.insertId,
+          req.ip || null,
+          req.headers["user-agent"] || "UNKNOWN",
+        ],
       );
     } catch (error) {
       return res
@@ -64,7 +69,7 @@ const savePackageMedia = async (req, res) => {
 
       await my_db.query(
         `INSERT INTO package_media(package_id, media_type, media_url) VALUES(?, ?, ?)`,
-        [packageId, mediaType, `/${file.path.replace(/\\/g, "/")}`]
+        [packageId, mediaType, `/${file.path.replace(/\\/g, "/")}`],
       );
 
       res.status(201).json({
@@ -101,7 +106,7 @@ const updatePackage = async (req, res) => {
     const [row] = await my_db.query(
       `UPDATE packages 
       SET title = ?, description = ?, price = ?, duration_day = ?, status = ? WHERE id = ?`,
-      [title, description, price, duration_day, status || "ACTIVE", packageId]
+      [title, description, price, duration_day, status || "ACTIVE", packageId],
     );
 
     if (row.affectedRows === 0) {
@@ -113,7 +118,12 @@ const updatePackage = async (req, res) => {
         `INSERT INTO admin_activity_logs
         (admin_id, action, entity, entity_id, ip_address, user_agent)
         VALUES (?, 'UPDATE', 'PACKAGE', ?, ?, ?)`,
-        [updatedBy, packageId, req.ip, req.headers["user_agent"]]
+        [
+          updatedBy,
+          packageId,
+          req.ip || null,
+          req.headers["user_agent"] || "UNKNOWN",
+        ],
       );
     } catch (error) {
       return res
@@ -153,7 +163,12 @@ const deletePackage = async (req, res) => {
         `INSERT INTO admin_activity_logs
         (admin_id, action, entity, entity_id, ip_address, user_agent)
         VALUES (?, 'DELETE', 'PACKAGE', ?, ?, ?)`,
-        [updatedBy, packageId, req.ip, req.headers["user_agent"]]
+        [
+          updatedBy,
+          packageId,
+          req.ip || null,
+          req.headers["user_agent"] || "UNKNOWN",
+        ],
       );
     } catch (error) {
       return res
@@ -191,7 +206,7 @@ const updatePackageStatus = async (req, res) => {
   try {
     const [row] = await my_db.query(
       `UPDATE packages SET status = ? WHERE id = ?`,
-      [status, packageId]
+      [status, packageId],
     );
 
     if (row.affectedRows === 0) {
@@ -203,7 +218,12 @@ const updatePackageStatus = async (req, res) => {
         `INSERT INTO admin_activity_logs
         (admin_id, action, entity, entity_id, ip_address, user_agent)
         VALUES (?, 'UPDATE', 'PACKAGE', ?, ?, ?)`,
-        [updatedBy, packageId, req.ip, req.headers["user_agent"]]
+        [
+          updatedBy,
+          packageId,
+          req.ip || null,
+          req.headers["user_agent"] || "UNKNOWN",
+        ],
       );
     } catch (error) {
       return res
@@ -224,7 +244,6 @@ const updatePackageStatus = async (req, res) => {
     });
   }
 };
-
 
 export default {
   createPackage,

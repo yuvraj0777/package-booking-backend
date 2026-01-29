@@ -167,6 +167,24 @@ const approvedServiceReview = async (req, res) => {
   }
 };
 
+const fetchUserLogActivity = async (req, res) => {
+  try {
+    const [row] = await my_db.query(`SELECT * FROM user_activity_log`);
+
+    if (row.affectedRows === 0) {
+      return res.status(404).json({ message: "Logged in users not found!" });
+    }
+
+    return res.json(row);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error!",
+      error: error.message,
+    });
+  }
+};
+
 export default {
   showPackages,
   showUsers,
@@ -177,4 +195,5 @@ export default {
   fetchApprovedReviews,
   pendingServiceReview,
   approvedServiceReview,
+  fetchUserLogActivity,
 };

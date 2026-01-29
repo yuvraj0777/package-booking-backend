@@ -36,11 +36,30 @@ const userSignUp = async (req, res) => {
       [name, email, hash, phone],
     );
 
+    try {
+      await my_db.query(
+        `INSERT INTO user_activity_log
+         (user_id, action, description, entity_type, entity_id, ip_address, user_agent)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          result.insertId,
+          "SIGNUP",
+          "User signed up successfully",
+          "AUTH",
+          null,
+          req.ip || null,
+          req.headers["user-agent"] || "UNKNOWN",
+        ],
+      );
+    } catch (logErr) {
+      console.error("Signup activity log failed:", logErr.message);
+    }
+
     const token = genToken({
       id: result.insertId,
       email,
       role: "USER",
-      phone: phone,
+      phone,
     });
 
     setToken(res, token);
@@ -101,6 +120,29 @@ const userLogin = async (req, res) => {
     return res.status(401).json({ message: "Invalid credentials!" });
   }
 
+  try {
+    await my_db.query(
+      `INSERT INTO user_activity_log
+   (user_id, description, action, entity_type, entity_id, ip_address, user_agent)
+   VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        user.id,
+        "User logged in successfully",
+        "LOGIN",
+        "AUTH",
+        null,
+        req.ip || null,
+        req.headers["user-agent"] || "UNKNOWN",
+      ],
+    );
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "USER log activity failed!",
+      error: error.message,
+    });
+  }
+
   const token = genToken(user);
   setToken(res, token);
 
@@ -133,7 +175,7 @@ const adminLogin = async (req, res) => {
   await my_db.query(
     `INSERT INTO admin_sessions (admin_id, ip_address, user_agent)
      VALUES (?, ?, ?)`,
-    [admin.id, req.ip, req.headers["user-agent"]],
+    [admin.id, req.ip || null, req.headers["user-agent"] || "UNKNOWN"],
   );
 
   // const token = genToken(admin);

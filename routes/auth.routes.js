@@ -110,5 +110,10 @@ router.get(
   authMiddleware.verifyToken,
   getController.pendingServiceReview,
 );
+router.get(
+  "/user-log-activity",
+  authMiddleware.verifyToken,
+  getController.fetchUserLogActivity,
+);
 
 export default router;
