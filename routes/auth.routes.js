@@ -54,7 +54,7 @@ router.put(
 );
 
 router.put(
-  "/review/approve/:packageId",
+  "/review/approve/:reviewId",
   authMiddleware.verifyToken,
   permissionsMiddleware.checkPermission("MANAGE_USERS"),
   reviewsController.moderateReview,
@@ -81,6 +81,19 @@ router.put(
 
 router.post("/logout", authMiddleware.verifyToken, authController.loggedOut);
 
+router.patch(
+  "/update-profile",
+  authMiddleware.verifyToken,
+  authController.updateUser,
+);
+
+router.delete(
+  "/delete-acivity",
+  authMiddleware.verifyToken,
+  permissionsMiddleware.checkPermission("MANAGE_USERS"),
+  authController.deleteUserActivity,
+);
+
 router.get("/packages", authMiddleware.verifyToken, getController.showPackages);
 router.get("/users", authMiddleware.verifyToken, getController.showUsers);
 router.get(
@@ -88,7 +101,7 @@ router.get(
   authMiddleware.verifyToken,
   getController.permissions,
 );
-router.get("/media", authMiddleware.verifyToken, getController.showMedia);
+router.get("/media", getController.showMedia);
 router.get("/me", authMiddleware.verifyToken, getController.logUser);
 router.get(
   "/reviews",
@@ -100,11 +113,7 @@ router.get(
   authMiddleware.verifyToken,
   getController.fetchApprovedReviews,
 );
-router.get(
-  "/approved-service-reviews",
-  authMiddleware.verifyToken,
-  getController.approvedServiceReview,
-);
+router.get("/approved-service-reviews", getController.approvedServiceReview);
 router.get(
   "/pending-service-reviews",
   authMiddleware.verifyToken,
@@ -115,5 +124,9 @@ router.get(
   authMiddleware.verifyToken,
   getController.fetchUserLogActivity,
 );
+router.get("/packages/:packageId/:packageSlug", getController.getSinglePackage);
+router.get("/media/:packageId", getController.getPackageMedia);
+router.get("/reviews/:packageId", getController.getPackageReview);
+router.get("/active-packages", getController.getActivePackages);
 
 export default router;

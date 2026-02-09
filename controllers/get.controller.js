@@ -64,14 +64,26 @@ const showMedia = async (req, res) => {
   }
 };
 
-const logUser = (req, res) => {
-  return res.json({
-    name: req.user.name,
-    email: req.user.email,
-    id: req.user.id,
-    role: req.user.role,
-    phone: req.user.phone,
-  });
+const logUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [rows] = await my_db.query(
+      "SELECT id, name, email, phone, role FROM users WHERE id = ?",
+      [userId],
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json(rows[0]);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
 };
 
 const fetchPendingReviews = async (req, res) => {
@@ -86,7 +98,7 @@ const fetchPendingReviews = async (req, res) => {
       `,
     );
 
-    if (rows.length === 0) {
+    if (rows.affectedRows === 0) {
       return res.status(404).json({ message: "No pending reviews found!" });
     }
 
@@ -185,6 +197,95 @@ const fetchUserLogActivity = async (req, res) => {
   }
 };
 
+const getSinglePackage = async (req, res) => {
+  const { packageId, packageSlug } = req.params;
+
+  try {
+    const [rows] = await my_db.query(
+      "SELECT id, title, slug, description, base_price, sell_price, duration_value, duration_unit, location, min_group_size, max_group_size, featured FROM packages WHERE id = ? AND slug = ?",
+      [packageId, packageSlug],
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Package not found!",
+      });
+    }
+
+    return res.json(rows[0]);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server error",
+      error: error.message,
+    });
+  }
+};
+
+const getPackageMedia = async (req, res) => {
+  const { packageId } = req.params;
+
+  try {
+    const [rows] = await my_db.query(
+      "SELECT id, package_id, media_type, created_at, media_url FROM package_media WHERE package_id = ?",
+      [packageId],
+    );
+
+    return res.json(rows);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server error",
+      error: error.message,
+    });
+  }
+};
+
+const getPackageReview = async (req, res) => {
+  const { packageId } = req.params;
+
+  try {
+    const [row] = await my_db.query(
+      `
+      SELECT r.*, u.name
+      FROM reviews r
+      JOIN users u ON u.id = r.user_id
+      WHERE r.status= "APPROVED" AND package_id = ?
+      ORDER BY r.created_at DESC 
+      `,
+      [packageId],
+    );
+
+    if (row.affectedRows === 0) {
+      return res.status(401).json({ message: "Approved reviews not found!" });
+    }
+
+    return res.json(row);
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "internal server error!", error: error.message });
+  }
+};
+
+const getActivePackages = async (req, res) => {
+  try {
+    const [row] = await my_db.query(
+      `SELECT id, title, slug, description, base_price, sell_price, duration_value, duration_unit, location, min_group_size, max_group_size, featured, status FROM packages WHERE status = "ACTIVE"`,
+    );
+
+    if (row.length === 0) {
+      return res.status(404).json({ message: "Avtive Package not found!" });
+    }
+    res.json(row);
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", error: error.message });
+  }
+};
+
 export default {
   showPackages,
   showUsers,
@@ -196,4 +297,8 @@ export default {
   pendingServiceReview,
   approvedServiceReview,
   fetchUserLogActivity,
+  getSinglePackage,
+  getPackageMedia,
+  getPackageReview,
+  getActivePackages,
 };

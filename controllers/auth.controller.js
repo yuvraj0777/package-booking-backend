@@ -211,10 +211,83 @@ const loggedOut = async (req, res) => {
   }
 };
 
+const updateUser = async (req, res) => {
+  const userId = req.user.id;
+  const { name, phone } = req.body;
+
+  try {
+    const [result] = await my_db.query(
+      "UPDATE users SET name = ?, phone = ? WHERE id = ?",
+      [name, phone, userId],
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Profile update failed",
+      });
+    }
+
+    const [rows] = await my_db.query(
+      "SELECT id, name, email, phone, role FROM users WHERE id = ?",
+      [userId],
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: rows[0],
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+const deleteUserActivity = async (req, res) => {
+  try {
+    const [result] = await my_db.query(`
+        SELECT * FROM user_activity_log 
+        WHERE action IN ("SIGNUP", "LOGIN", "ADD_REVIEW")`);
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: "User activity not found!" });
+    } else {
+      const [row] = await my_db.query(
+        `DELETE FROM user_activity_log WHERE action IN("SIGNUP", "LOGIN", "ADD_REVIEW")`,
+      );
+
+      if (row.affectedRows === 0) {
+        return res
+          .status(404)
+          .json({ message: "User activity delation failed!" });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "User Activity successfully deleted!",
+      });
+    }
+  } catch (error) {
+    return res
+      .status(500)
+      .json({
+        success: false,
+        message: "Internal server error",
+        error: error.message,
+      });
+  }
+};
+
 export default {
   userSignUp,
   adminSignUp,
   userLogin,
   adminLogin,
   loggedOut,
+  updateUser,
+  deleteUserActivity,
 };

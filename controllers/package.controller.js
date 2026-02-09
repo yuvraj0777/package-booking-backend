@@ -2,21 +2,48 @@ import my_db from "../module/db.js";
 
 // create package
 const createPackage = async (req, res) => {
-  const { title, description, price, duration_days } = req.body;
+  const {
+    title,
+    slug,
+    description,
+    base_price,
+    sell_price,
+    duration_value,
+    duration_unit,
+    location,
+    min_group_size,
+    max_group_size,
+  } = req.body;
   const createdBy = req.user.id;
+  const featured = req.body.featured ? 1 : 0;
 
-  if (!title || !price || !duration_days) {
+  if (
+    !title ||
+    !base_price ||
+    !sell_price ||
+    !duration_value ||
+    !duration_unit ||
+    !max_group_size
+  ) {
     return res.status(400).json({ message: "Required fields missing" });
   }
 
   try {
-    const sql = `INSERT INTO packages(title, description, price, duration_day, created_by) VALUES (?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO packages(title, slug, description, base_price, sell_price, duration_value, duration_unit, location, min_group_size, max_group_size, featured, created_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     const [row] = await my_db.query(sql, [
       title,
+      slug,
       description,
-      price,
-      duration_days,
+      base_price,
+      sell_price,
+      duration_value,
+      duration_unit,
+      location,
+      min_group_size || 1,
+      max_group_size,
+      featured,
       createdBy,
     ]);
 
@@ -91,22 +118,55 @@ const savePackageMedia = async (req, res) => {
 // update packages
 const updatePackage = async (req, res) => {
   const { packageId } = req.params;
-  const { title, description, price, duration_day, status } = req.body;
+  const {
+    title,
+    slug,
+    description,
+    base_price,
+    sell_price,
+    duration_value,
+    duration_unit,
+    location,
+    min_group_size,
+    max_group_size,
+    featured,
+  } = req.body;
   const updatedBy = req.user.id;
 
   if (!packageId) {
     return res.status(400).json({ message: "Messing package Id!" });
   }
 
-  if (!title || !price || !duration_day) {
+  if (
+    !title ||
+    !base_price ||
+    !sell_price ||
+    !duration_value ||
+    !duration_unit ||
+    !max_group_size
+  ) {
     return res.status(400).json({ message: "All fields required!" });
   }
 
   try {
     const [row] = await my_db.query(
       `UPDATE packages 
-      SET title = ?, description = ?, price = ?, duration_day = ?, status = ? WHERE id = ?`,
-      [title, description, price, duration_day, status || "ACTIVE", packageId],
+      SET title = ?, slug = ?, description = ?, base_price = ?, sell_price = ?, duration_value = ?, duration_unit = ?, location = ?, min_group_size = ?, max_group_size = ?, featured = ?, created_by = ? WHERE id = ?`,
+      [
+        title,
+        slug,
+        description,
+        base_price,
+        sell_price,
+        duration_value,
+        duration_unit,
+        location,
+        min_group_size,
+        max_group_size,
+        featured,
+        updatedBy,
+        packageId,
+      ],
     );
 
     if (row.affectedRows === 0) {

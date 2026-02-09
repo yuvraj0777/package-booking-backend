@@ -6,62 +6,74 @@ const addReviews = async (req, res) => {
   const { rating, review } = req.body;
 
   if (!rating || !review) {
-    return res.status(400).json({ message: "All field required!" });
+    return res.status(400).json({
+      success: false,
+      message: "All fields are required",
+    });
   }
 
   try {
-    const [row] = await my_db.query(
-      `
-       INSERT INTO reviews (package_id, user_id, rating, review) 
-       VALUES (?, ?, ?, ?)
-      `,
-      [packageId, userId, rating, review],
-    );
+    const [pkg] = await my_db.query("SELECT id FROM packages WHERE id = ?", [
+      packageId,
+    ]);
 
-    const reviewId = row.insertId;
-
-    if (row.affectedRows === 0) {
-      return res.status(401).json({ message: "Review can't added!" });
-    }
-
-    try {
-      await my_db.query(
-        `
-        INSERT INTO user_activity_log
-         (user_id, description, action, entity_type, entity_id, ip_address, user_agent) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
-          userId,
-          `Added a ${rating}★ review for package ID ${packageId}`,
-          "ADD_REVIEW",
-          "REVIEW",
-          reviewId,
-          req.ip || null,
-          req.headers["user-agent"] || "UNKNOWN",
-        ],
-      );
-    } catch (error) {
-      res.status(500).json({
+    if (!pkg.length) {
+      return res.status(404).json({
         success: false,
-        message: "USER review log activity failed!",
-        error: error.message,
+        message: "Package does not exist",
       });
     }
 
-    return res
-      .status(201)
-      .json({ success: true, message: "Review added successfully" });
+    const [existing] = await my_db.query(
+      "SELECT id FROM reviews WHERE package_id = ? AND user_id = ?",
+      [packageId, userId],
+    );
+
+    if (existing.length) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already reviewed this package",
+      });
+    }
+
+    const [result] = await my_db.query(
+      `INSERT INTO reviews (package_id, user_id, rating, review)
+       VALUES (?, ?, ?, ?)`,
+      [packageId, userId, rating, review],
+    );
+
+    const reviewId = result.insertId;
+
+    await my_db.query(
+      `INSERT INTO user_activity_log
+       (user_id, description, action, entity_type, entity_id, ip_address, user_agent)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
+        `Added a ${rating}★ review for package ID ${packageId}`,
+        "ADD_REVIEW",
+        "REVIEW",
+        reviewId,
+        req.ip || null,
+        req.headers["user-agent"] || "UNKNOWN",
+      ],
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: "Review added successfully",
+    });
   } catch (error) {
     return res.status(500).json({
-      message: "Internal server error!",
-      error: error.message,
       success: false,
+      message: "Internal server error",
+      error: error.message,
     });
   }
 };
 
 const moderateReview = async (req, res) => {
-  const { packageId } = req.params;
+  const { reviewId } = req.params;
   const { status, admin_note } = req.body;
   const adminId = req.user.id;
 
@@ -81,7 +93,7 @@ const moderateReview = async (req, res) => {
           admin_note = ?
       WHERE id = ?
       `,
-      [status, adminId, admin_note || null, packageId],
+      [status, adminId, admin_note || null, reviewId],
     );
 
     if (result.affectedRows === 0) {
@@ -104,6 +116,7 @@ const moderateReview = async (req, res) => {
 const serviceReview = async (req, res) => {
   const { rating, review } = req.body;
   const userId = req.user.id;
+  const userName = req.user.name || null;
 
   if (!rating || !review) {
     return res.status(400).json({ message: "All fields required!" });
@@ -130,7 +143,7 @@ const serviceReview = async (req, res) => {
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           userId,
-          `Added a ${rating}★ review for package ID ${packageId}`,
+          `Added a ${rating}★ review for service by ${userName}`,
           "ADD_REVIEW",
           "REVIEW",
           reviewId,
@@ -159,7 +172,7 @@ const serviceReview = async (req, res) => {
 };
 
 const moderateServiceReview = async (req, res) => {
-  const { status, admin_note } = req.body;
+  const { reviewId, status, admin_note } = req.body;
   const adminId = req.user.id;
   const ALLOWED_STATUSES = ["PENDING", "APPROVED", "REJECTED"];
 
@@ -174,8 +187,9 @@ const moderateServiceReview = async (req, res) => {
       SET status = ?, 
       moderate_by = ?,
       moderate_at = NOW(),
-      admin_note = ?`,
-      [status, adminId, admin_note || null],
+      admin_note = ?
+      WHERE id = ?`,
+      [status, adminId, admin_note || null, reviewId],
     );
 
     if (row.affectedRows === 0) {
@@ -188,14 +202,11 @@ const moderateServiceReview = async (req, res) => {
       .status(200)
       .json({ success: true, message: "Status updated successfully" });
   } catch (error) {
-    return (
-      res,
-      status(500).json({
-        success: false,
-        message: "Review moderation failed!",
-        error: error.message,
-      })
-    );
+    return res.status(500).json({
+      success: false,
+      message: "Review moderation failed!",
+      error: error.message,
+    });
   }
 };
 
