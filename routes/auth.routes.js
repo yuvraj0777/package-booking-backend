@@ -6,6 +6,8 @@ import packageController from "../controllers/package.controller.js";
 import upload from "../middleware/upload.middleware.js";
 import getController from "../controllers/get.controller.js";
 import reviewsController from "../controllers/reviews.controller.js";
+import userInfoController from "../controllers/user.info.controller.js";
+import packageBooking from "../controllers/booking.controller.js";
 
 const router = express.Router();
 
@@ -88,10 +90,30 @@ router.patch(
 );
 
 router.delete(
-  "/delete-acivity",
+  "/delete-activity",
   authMiddleware.verifyToken,
   permissionsMiddleware.checkPermission("MANAGE_USERS"),
   authController.deleteUserActivity,
+);
+
+router.put(
+  "/mark-popular/:packageId",
+  authMiddleware.verifyToken,
+  permissionsMiddleware.checkPermission("UPDATE_PACKAGE"),
+  packageController.markPopularPackage,
+);
+
+router.post("/user-enquiry", userInfoController.userInfo);
+
+router.post(
+  "/create-order",
+  authMiddleware.verifyToken,
+  packageBooking.createOrder,
+);
+router.post(
+  "/verify-payment",
+  authMiddleware.verifyToken,
+  packageBooking.verifyPayment,
 );
 
 router.get("/packages", authMiddleware.verifyToken, getController.showPackages);
@@ -128,5 +150,29 @@ router.get("/packages/:packageId/:packageSlug", getController.getSinglePackage);
 router.get("/media/:packageId", getController.getPackageMedia);
 router.get("/reviews/:packageId", getController.getPackageReview);
 router.get("/active-packages", getController.getActivePackages);
+router.get("/get-popular-package", getController.getPopularPackages);
+router.get(
+  "/get-user-enquiry",
+  authMiddleware.verifyToken,
+  getController.getUserEnquiry,
+);
+router.get(
+  "/show-booking",
+  authMiddleware.verifyToken,
+  authMiddleware.verifyAdminToken,
+  packageBooking.getUserBookings,
+);
+router.get(
+  "/payment-info",
+  authMiddleware.verifyToken,
+  authMiddleware.verifyAdminToken,
+  packageBooking.getPaymetDetail,
+);
+
+router.get(
+  "/my-bookings",
+  authMiddleware.verifyToken,
+  getController.getAllBooking,
+);
 
 export default router;

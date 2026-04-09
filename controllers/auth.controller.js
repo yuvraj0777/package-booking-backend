@@ -249,36 +249,26 @@ const updateUser = async (req, res) => {
 
 const deleteUserActivity = async (req, res) => {
   try {
-    const [result] = await my_db.query(`
-        SELECT * FROM user_activity_log 
-        WHERE action IN ("SIGNUP", "LOGIN", "ADD_REVIEW")`);
+    const [row] = await my_db.query(
+      `DELETE FROM user_activity_log WHERE action IN("SIGNUP", "LOGIN", "ADD_REVIEW")`,
+    );
 
-    if (result.length === 0) {
-      return res.status(404).json({ message: "User activity not found!" });
-    } else {
-      const [row] = await my_db.query(
-        `DELETE FROM user_activity_log WHERE action IN("SIGNUP", "LOGIN", "ADD_REVIEW")`,
-      );
-
-      if (row.affectedRows === 0) {
-        return res
-          .status(404)
-          .json({ message: "User activity delation failed!" });
-      }
-
-      return res.status(200).json({
-        success: true,
-        message: "User Activity successfully deleted!",
-      });
+    if (row.affectedRows === 0) {
+      return res
+        .status(404)
+        .json({ message: "User activity delation failed!" });
     }
+
+    return res.status(200).json({
+      success: true,
+      message: "User Activity successfully deleted!",
+    });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "Internal server error",
-        error: error.message,
-      });
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 

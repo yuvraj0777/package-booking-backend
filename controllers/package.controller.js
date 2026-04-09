@@ -305,10 +305,62 @@ const updatePackageStatus = async (req, res) => {
   }
 };
 
+const markPopularPackage = async (req, res) => {
+  const { packageId } = req.params;
+  const { featured } = req.body;
+  const updatedBy = req.user.id;
+
+  try {
+    const featuredValue =
+      featured === "1" || featured === 1 || featured === true ? 1 : 0;
+    const [row] = await my_db.query(
+      `UPDATE packages SET featured = ? WHERE id = ?`,
+      [featuredValue, packageId],
+    );
+
+    if (row.affectedRows === 0) {
+      return res.status(401).json({ message: "Somthing went wrong!" });
+    }
+
+    try {
+      await my_db.query(
+        `INSERT INTO admin_activity_logs
+        (admin_id, action, entity, entity_id, ip_address, user_agent)
+        VALUES (?, 'UPDATE', 'PACKAGE', ?, ?, ?)`,
+        [
+          updatedBy,
+          packageId,
+          req.ip || null,
+          req.headers["user_agent"] || "UNKNOWN",
+        ],
+      );
+    } catch (error) {
+      return res
+        .status(401)
+        .json({ message: "Admin log field!", error: error.message });
+    }
+
+    return res
+      .status(201)
+      .json({
+        success: true,
+        message: "Featured updated successfully",
+        featured: featuredValue,
+      });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error!",
+      error: error.message,
+    });
+  }
+};
+
 export default {
   createPackage,
   savePackageMedia,
   updatePackage,
   deletePackage,
   updatePackageStatus,
+  markPopularPackage,
 };

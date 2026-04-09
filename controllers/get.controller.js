@@ -286,6 +286,87 @@ const getActivePackages = async (req, res) => {
   }
 };
 
+const getPopularPackages = async (req, res) => {
+  try {
+    const [row] = await my_db.query(
+      `SELECT id, title, slug, description, base_price, sell_price, duration_value, duration_unit, location, min_group_size, max_group_size, featured, status FROM packages WHERE featured = "1"`,
+    );
+
+    if (row.length === 0) {
+      return res.status(404).json({ message: "Popular Package not found!" });
+    }
+    res.json(row);
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", error: error.message });
+  }
+};
+
+const getUserEnquiry = async (req, res) => {
+  try {
+    const [result] = await my_db.query(
+      `SELECT user_id, name, email, subject, message FROM userInfo`,
+    );
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: "User enquiry not found!" });
+    }
+
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error!",
+      error: error.message,
+    });
+  }
+};
+
+const getAllBooking = async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const userId = req.user.id;
+
+  try {
+    const query = `
+    SELECT 
+      b.id as booking_id,
+      b.travel_date,
+      b.persons,
+      b.total_amount,
+      b.status,
+      b.created_at,
+      p.id as package_id,
+      p.title as package_name,
+      p.duration_value,
+      p.duration_unit,
+      p.sell_price,
+      pay.payment_status,
+      pay.transaction_id
+    FROM bookings b
+    INNER JOIN packages p ON b.package_id = p.id
+    LEFT JOIN payments pay ON b.id = pay.booking_id
+    WHERE b.user_id = ?
+    ORDER BY b.created_at DESC`;
+
+    const [bookings] = await my_db.query(query, [userId]);
+
+    res.json({
+      success: true,
+      data: bookings,
+    });
+  } catch (error) {
+    console.error("Booking fetch error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 export default {
   showPackages,
   showUsers,
@@ -301,4 +382,7 @@ export default {
   getPackageMedia,
   getPackageReview,
   getActivePackages,
+  getPopularPackages,
+  getUserEnquiry,
+  getAllBooking,
 };
