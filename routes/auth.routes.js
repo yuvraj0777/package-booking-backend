@@ -116,6 +116,18 @@ router.post(
   packageBooking.verifyPayment,
 );
 
+router.post(
+  "/reset-password",
+  authMiddleware.verifyToken,
+  authController.resetPassword,
+);
+
+router.post(
+  "/forget-password",
+  authMiddleware.verifyToken,
+  authController.generateOTP,
+);
+
 router.get("/packages", authMiddleware.verifyToken, getController.showPackages);
 router.get("/users", authMiddleware.verifyToken, getController.showUsers);
 router.get(

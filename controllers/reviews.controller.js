@@ -74,7 +74,7 @@ const addReviews = async (req, res) => {
 
 const moderateReview = async (req, res) => {
   const { reviewId } = req.params;
-  const { status, admin_note } = req.body;
+  const { status } = req.body;
   const adminId = req.user.id;
 
   const ALLOWED_STATUSES = ["PENDING", "APPROVED", "REJECTED"];
@@ -89,11 +89,10 @@ const moderateReview = async (req, res) => {
       UPDATE reviews
       SET status = ?,
           moderated_by = ?,
-          moderated_at = NOW(),
-          admin_note = ?
+          moderated_at = NOW()
       WHERE id = ?
       `,
-      [status, adminId, admin_note || null, reviewId],
+      [status, adminId, reviewId],
     );
 
     if (result.affectedRows === 0) {
