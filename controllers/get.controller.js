@@ -345,12 +345,17 @@ const getAllBooking = async (req, res) => {
       p.duration_unit,
       p.sell_price,
       pay.payment_status,
-      pay.transaction_id
+      pay.transaction_id,
+      u.id as user_id,
+      u.name,
+      u.email,
+      u.phone
     FROM bookings b
     INNER JOIN packages p ON b.package_id = p.id
     LEFT JOIN payments pay ON b.id = pay.booking_id
+    LEFT JOIN users u ON b.user_id = u.id
     WHERE b.user_id = ?
-    ORDER BY b.created_at DESC`;
+    ORDER BY b.created_at DESC;`;
 
     const [bookings] = await my_db.query(query, [userId]);
 

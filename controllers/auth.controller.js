@@ -275,11 +275,16 @@ const deleteUserActivity = async (req, res) => {
 };
 
 const generateOTP = async (req, res) => {
+  // const email = req.body?.email?.trim()?.toLowerCase();
   const { email } = req.body;
   try {
-    const [rows] = await my_db.query(`SELECT * FROM users WHERE email = ?`, [
-      email,
-    ]);
+    const [rows] = await my_db.query(
+      `SELECT * FROM users WHERE LOWER(email) = ?`,
+      [email],
+    );
+
+    console.log("Row data:", rows);
+    console.log("User Email :", email);
 
     if (rows.length === 0) {
       return res.status(404).json({
@@ -461,7 +466,7 @@ const resetPassword = async (req, res) => {
          WHERE id = ?`,
         [record.id],
       );
-      return rs.status(401).json({ success: false, message: "Invalid OTP!" });
+      return res.status(401).json({ success: false, message: "Invalid OTP!" });
     }
 
     const hashPassword = await bcrypt.hash(newPassword, salt_round);

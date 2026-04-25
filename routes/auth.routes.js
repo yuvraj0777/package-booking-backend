@@ -12,7 +12,7 @@ import packageBooking from "../controllers/booking.controller.js";
 const router = express.Router();
 
 router.get("/", (req, res) => {
-  res.send("Auth route working");
+  res.send("API is running...");
 });
 
 router.post("/signup", authController.userSignUp);
@@ -118,13 +118,11 @@ router.post(
 
 router.post(
   "/reset-password",
-  authMiddleware.verifyToken,
   authController.resetPassword,
 );
 
 router.post(
   "/forget-password",
-  authMiddleware.verifyToken,
   authController.generateOTP,
 );
 
