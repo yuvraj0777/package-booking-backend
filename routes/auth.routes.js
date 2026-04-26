@@ -15,6 +15,10 @@ router.get("/", (req, res) => {
   res.send("API is running...");
 });
 
+router.get("/healthz", (req, res) => {
+  res.status(200).send("OK");
+});
+
 router.post("/signup", authController.userSignUp);
 router.post("/adminSingup", authController.adminSignUp);
 router.post("/loggin", authController.userLogin);
