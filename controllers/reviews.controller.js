@@ -209,9 +209,89 @@ const moderateServiceReview = async (req, res) => {
   }
 };
 
+const updateReview = async (req, res) => {
+  const userId = req.user.id;
+  const { rating, review, reviewId } = req.body;
+
+  if (!rating || !review) {
+    return res.status(400).json({
+      success: false,
+      message: "All fields are required",
+    });
+  }
+
+  if (rating < 1 || rating > 5) {
+    return res.status(400).json({
+      success: false,
+      message: "Rating must be between 1 and 5",
+    });
+  }
+
+  try {
+    const [result] = await my_db.query(
+      `
+      UPDATE reviews 
+      SET rating = ?, review = ?, status = "APPROVED"
+      WHERE id = ? AND user_id = ?
+      `,
+      [rating, review, reviewId, userId],
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Review not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Review updated successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Review not updated!",
+      error: error.message,
+    });
+  }
+};
+
+const deleteReview = async (req, res) => {
+  const userId = req.user.id;
+  const { reviewId } = req.params;
+
+  try {
+    const [result] = await my_db.query(
+      `DELETE FROM reviews WHERE id = ? AND user_id = ?`,
+      [reviewId, userId],
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Review not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Your review deleted successfully!",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Review not deleted!",
+      error: error.message,
+    });
+  }
+};
+
 export default {
   addReviews,
   moderateReview,
   serviceReview,
   moderateServiceReview,
+  updateReview,
+  deleteReview,
 };

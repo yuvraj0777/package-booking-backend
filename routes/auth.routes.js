@@ -120,14 +120,20 @@ router.post(
   packageBooking.verifyPayment,
 );
 
-router.post(
-  "/reset-password",
-  authController.resetPassword,
+router.post("/reset-password", authController.resetPassword);
+
+router.post("/forget-password", authController.generateOTP);
+
+router.patch(
+  "/update-reviews",
+  authMiddleware.verifyToken,
+  reviewsController.updateReview,
 );
 
-router.post(
-  "/forget-password",
-  authController.generateOTP,
+router.delete(
+  "/delete-reviews/:reviewId",
+  authMiddleware.verifyToken,
+  reviewsController.deleteReview,
 );
 
 router.get("/packages", authMiddleware.verifyToken, getController.showPackages);
@@ -187,6 +193,18 @@ router.get(
   "/my-bookings",
   authMiddleware.verifyToken,
   getController.getAllBooking,
+);
+
+router.get(
+  "/payment-receipt/:bookingId",
+  authMiddleware.verifyToken,
+  packageBooking.getPaymentReceipt,
+);
+
+router.get(
+  "/my-reviews",
+  authMiddleware.verifyToken,
+  getController.getUserReviews,
 );
 
 export default router;

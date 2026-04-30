@@ -217,12 +217,26 @@ const getUserBookings = async (req, res) => {
 
   try {
     const [result] = await my_db.query(
-      `SELECT b.*, p.title
-       FROM bookings b
-       JOIN packages p ON b.package_id = p.id
-       ORDER BY b.created_at DESC;
+      `SELECT 
+        b.id AS booking_id,
+        b.travel_date,
+        b.persons,
+        b.total_amount,
+        b.status,
+        b.created_at,
+        p.id AS package_id,
+        p.title AS package_name,
+        u.name,
+        u.email,
+        u.phone,
+        pay.payment_status,
+        pay.transaction_id
+      FROM bookings b
+      JOIN packages p ON b.package_id = p.id
+      JOIN users u ON b.user_id = u.id
+      LEFT JOIN payments pay ON b.id = pay.booking_id
+      ORDER BY b.created_at DESC;
       `,
-      [user_id],
     );
 
     return res.json({
@@ -254,9 +268,53 @@ const getPaymetDetail = async (req, res) => {
   }
 };
 
+const getPaymentReceipt = async (req, res) => {
+  const { bookingId } = req.params;
+
+  try {
+    const [result] = await my_db.query(
+      `
+      SELECT 
+       b.id as booking_id,
+        b.travel_date,
+        b.persons,
+        b.total_amount,
+        b.status,
+        p.title as package_name,
+        p.duration_value,
+        p.duration_unit,
+        pay.transaction_id,
+        pay.payment_status,
+        u.name,
+        u.email,
+        u.phone
+      FROM bookings b
+      JOIN packages p ON b.package_id = p.id
+      JOIN payments pay ON b.id = pay.booking_id
+      JOIN users u ON b.user_id = u.id
+      WHERE b.id = ?
+      `,
+      [bookingId],
+    );
+
+    if (!result.length) {
+      return res.status(404).json({ message: "Receipt not found" });
+    }
+
+    return res.json(result[0]);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch payment receipt",
+      error: error.message,
+    });
+  }
+};
+
 export default {
   createOrder,
   verifyPayment,
   getUserBookings,
   getPaymetDetail,
+  getPaymentReceipt,
 };

@@ -372,6 +372,44 @@ const getAllBooking = async (req, res) => {
   }
 };
 
+const getUserReviews = async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const userId = req.user.id;
+
+  try {
+    const [response] = await my_db.query(
+      `
+      SELECT 
+        r.id AS review_id,
+        r.package_id,
+        r.user_id,
+        r.rating,
+        r.review,
+        r.status,
+        r.created_at,
+        p.title AS package_name
+      FROM reviews r
+      JOIN packages p ON r.package_id = p.id
+      WHERE r.user_id = ?
+      `,
+      [userId],
+    );
+    res.json({
+      success: true,
+      data: response,
+    });
+  } catch (error) {
+    console.error("Review fetch error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 export default {
   showPackages,
   showUsers,
@@ -390,4 +428,5 @@ export default {
   getPopularPackages,
   getUserEnquiry,
   getAllBooking,
+  getUserReviews,
 };
