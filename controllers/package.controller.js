@@ -1,4 +1,7 @@
 import my_db from "../module/db.js";
+import NodeCache from "node-cache";
+
+const cache = new NodeCache({ stdTTL: 60 });
 
 // create package
 const createPackage = async (req, res) => {
@@ -65,6 +68,8 @@ const createPackage = async (req, res) => {
         .json({ message: "Internal server error!", error: error.message });
     }
 
+    cache.del("packages");
+
     res.status(201).json({
       success: true,
       message: "Package created successfully",
@@ -98,6 +103,8 @@ const savePackageMedia = async (req, res) => {
         `INSERT INTO package_media(package_id, media_type, media_url) VALUES(?, ?, ?)`,
         [packageId, mediaType, `/${file.path.replace(/\\/g, "/")}`],
       );
+
+      cache.del("packages");
 
       res.status(201).json({
         success: true,
@@ -190,6 +197,9 @@ const updatePackage = async (req, res) => {
         .status(401)
         .json({ message: "Admin log field!", error: error.message });
     }
+
+    cache.del("packages");
+
     res.status(200).json({
       success: true,
       message: "Package updated successfully",
@@ -235,6 +245,8 @@ const deletePackage = async (req, res) => {
         .status(401)
         .json({ message: "Admin log field!", error: error.message });
     }
+
+    cache.del("packages");
 
     return res.status(200).json({
       success: true,
@@ -291,6 +303,8 @@ const updatePackageStatus = async (req, res) => {
         .json({ message: "Admin log field!", error: error.message });
     }
 
+    cache.del("packages");
+
     return res.status(201).json({
       success: true,
       message: "Status updated successfully",
@@ -340,13 +354,13 @@ const markPopularPackage = async (req, res) => {
         .json({ message: "Admin log field!", error: error.message });
     }
 
-    return res
-      .status(201)
-      .json({
-        success: true,
-        message: "Featured updated successfully",
-        featured: featuredValue,
-      });
+    cache.del("packages");
+
+    return res.status(201).json({
+      success: true,
+      message: "Featured updated successfully",
+      featured: featuredValue,
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,

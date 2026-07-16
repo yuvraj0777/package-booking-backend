@@ -1,13 +1,19 @@
 import my_db from "../module/db.js";
+import { getOrSetCache } from "../Utility/caching.js";
 
 const showPackages = async (req, res) => {
   try {
-    const [row] = await my_db.query(`SELECT * FROM packages`);
+    const data = await getOrSetCache("packages", async () => {
+      const [row] = await my_db.query(`SELECT * FROM packages`);
 
-    if (row.length === 0) {
-      return res.status(404).json({ message: "Package not found!" });
-    }
-    res.json(row);
+      if (row.length === 0) {
+        return res.status(404).json({ message: "Package not found!" });
+      }
+
+      return row;
+    });
+
+    res.json(data);
   } catch (error) {
     return res
       .status(500)
@@ -50,13 +56,17 @@ const permissions = async (req, res) => {
 
 const showMedia = async (req, res) => {
   try {
-    const [row] = await my_db.query(`SELECT * FROM package_media`);
+    const data = await getOrSetCache("packages_media", async () => {
+      const [row] = await my_db.query(`SELECT * FROM package_media`);
 
-    if (row.length === 0) {
-      return res.status(404).json({ message: "Package media not found!" });
-    }
+      if (row.length === 0) {
+        return res.status(404).json({ message: "Package media not found!" });
+      }
 
-    res.json(row);
+      return row;
+    });
+
+    return res.json(data);
   } catch (error) {
     return res
       .status(500)
@@ -113,19 +123,23 @@ const fetchPendingReviews = async (req, res) => {
 
 const fetchApprovedReviews = async (req, res) => {
   try {
-    const [row] = await my_db.query(`
-      SELECT r.*, u.name
-      FROM reviews r
-      JOIN users u ON u.id = r.user_id
-      WHERE r.status= "APPROVED"
-      ORDER BY r.created_at DESC 
-      `);
+    const data = await getOrSetCache("reviews", async () => {
+      const [row] = await my_db.query(`
+        SELECT r.*, u.name
+        FROM reviews r
+        JOIN users u ON u.id = r.user_id
+        WHERE r.status= "APPROVED"
+        ORDER BY r.created_at DESC 
+        `);
 
-    if (row.affectedRows === 0) {
-      return res.status(401).json({ message: "Approved reviews not found!" });
-    }
+      if (row.affectedRows === 0) {
+        return res.status(401).json({ message: "Approved reviews not found!" });
+      }
 
-    return res.json(row);
+      return row;
+    });
+
+    return res.json(data);
   } catch (error) {
     return res
       .status(500)
@@ -158,18 +172,22 @@ const pendingServiceReview = async (req, res) => {
 
 const approvedServiceReview = async (req, res) => {
   try {
-    const [row] = await my_db.query(`
-    SELECT sr.*, u.name
-    FROM serviceReview sr
-    JOIN users u ON u.id = sr.user_id
-    WHERE status = "APPROVED"
-    ORDER BY sr.created_at DESC`);
+    const data = await getOrSetCache("service_reviews", async () => {
+      const [row] = await my_db.query(`
+      SELECT sr.*, u.name
+      FROM serviceReview sr
+      JOIN users u ON u.id = sr.user_id
+      WHERE status = "APPROVED"
+      ORDER BY sr.created_at DESC`);
 
-    if (row.affectedRows === 0) {
-      return res.status(404).json({ message: "Approved reviews not found!" });
-    }
+      if (row.affectedRows === 0) {
+        return res.status(404).json({ message: "Approved reviews not found!" });
+      }
 
-    return res.json(row);
+      return row;
+    });
+
+    return res.json(data);
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -181,13 +199,17 @@ const approvedServiceReview = async (req, res) => {
 
 const fetchUserLogActivity = async (req, res) => {
   try {
-    const [row] = await my_db.query(`SELECT * FROM user_activity_log`);
+    const data = await getOrSetCache("user_log_activity", async () => {
+      const [row] = await my_db.query(`SELECT * FROM user_activity_log`);
 
-    if (row.affectedRows === 0) {
-      return res.status(404).json({ message: "Logged in users not found!" });
-    }
+      if (row.affectedRows === 0) {
+        return res.status(404).json({ message: "Logged in users not found!" });
+      }
 
-    return res.json(row);
+      return row;
+    });
+
+    return res.json(data);
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -271,14 +293,18 @@ const getPackageReview = async (req, res) => {
 
 const getActivePackages = async (req, res) => {
   try {
-    const [row] = await my_db.query(
-      `SELECT id, title, slug, description, base_price, sell_price, duration_value, duration_unit, location, min_group_size, max_group_size, featured, status FROM packages WHERE status = "ACTIVE"`,
-    );
+    const data = await getOrSetCache("active_packages", async () => {
+      const [row] = await my_db.query(
+        `SELECT id, title, slug, description, base_price, sell_price, duration_value, duration_unit, location, min_group_size, max_group_size, featured, status FROM packages WHERE status = "ACTIVE"`,
+      );
 
-    if (row.length === 0) {
-      return res.status(404).json({ message: "Avtive Package not found!" });
-    }
-    res.json(row);
+      if (row.length === 0) {
+        return res.status(404).json({ message: "Avtive Package not found!" });
+      }
+
+      return row;
+    });
+    res.json(data);
   } catch (error) {
     return res
       .status(500)
@@ -288,14 +314,17 @@ const getActivePackages = async (req, res) => {
 
 const getPopularPackages = async (req, res) => {
   try {
-    const [row] = await my_db.query(
-      `SELECT id, title, slug, description, base_price, sell_price, duration_value, duration_unit, location, min_group_size, max_group_size, featured, status FROM packages WHERE featured = "1"`,
-    );
+    const data = await getOrSetCache("popular_packages", async () => {
+      const [row] = await my_db.query(
+        `SELECT id, title, slug, description, base_price, sell_price, duration_value, duration_unit, location, min_group_size, max_group_size, featured, status FROM packages WHERE featured = "1"`,
+      );
 
-    if (row.length === 0) {
-      return res.status(404).json({ message: "Popular Package not found!" });
-    }
-    res.json(row);
+      if (row.length === 0) {
+        return res.status(404).json({ message: "Popular Package not found!" });
+      }
+      return row;
+    });
+    res.json(data);
   } catch (error) {
     return res
       .status(500)
